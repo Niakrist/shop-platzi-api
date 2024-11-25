@@ -6,9 +6,11 @@ import avatarSrc from "../../images/avatar.svg";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleShowForm } from "../../features/user/userSlice";
 import { useEffect, useState } from "react";
+import { useGetProductsQuery } from "../../features/api/apiSlice";
 
 const Header = () => {
   const [values, setValues] = useState({ name: "Guest", avatar: avatarSrc });
+  const [search, setSearch] = useState("");
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -20,6 +22,14 @@ const Header = () => {
       navigate(ROUTES.PROFILE);
     }
   };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setSearch(e.target.value);
+  };
+
+  const { data, isLoading } = useGetProductsQuery({ title: search });
+  console.log("data: ", data);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -56,11 +66,34 @@ const Header = () => {
                 name="search"
                 placeholder="Search for anything..."
                 autoComplete="off"
-                onChange={() => {}}
-                value={""}
+                onChange={handleSearch}
+                value={search}
               />
             </div>
-            <div className={styles.box}></div>
+            {search && (
+              <div className={styles.box}>
+                {isLoading
+                  ? "Loading"
+                  : !data.length
+                  ? "not result"
+                  : data.map(({ id, title, images }) => {
+                      return (
+                        <Link
+                          onClick={() => setSearch("")}
+                          className={styles.item}
+                          key={id}
+                          to={`/products/${id}`}
+                        >
+                          <div
+                            className={styles.image}
+                            style={{ backgroundImage: `url(${images[0]})` }}
+                          ></div>
+                          <div className={styles.title}>{title}</div>
+                        </Link>
+                      );
+                    })}
+              </div>
+            )}
           </form>
           <div className={styles.account}>
             <Link to={ROUTES.HOME} className={styles.favourites}>
